@@ -1,160 +1,131 @@
-const express = require('express')
-app = express()
+const express = require('express'); // Import Express
+const cors = require('cors'); // Import CORS
+const path = require('path'); // Import file paths
 
-const cors = require("cors")
+// Create an Express application
+const app = express();
+const port = process.env.PORT || 3000; // Set the port
 
-var url = require('url');
-var dt = require('./date-time');
+// Allow requests from all origins
+app.use(cors());
 
-const port = process.env.PORT || 3000
-const majorVersion = 1
-const minorVersion = 3
+// Use static files from the static folder
+app.use(express.static(path.join(__dirname, 'static')));
 
-// Use Express to publish static HTML, CSS, and JavaScript files that run in the browser. 
-app.use(express.static(__dirname + '/static'))
-app.use(cors({ origin: '*' }))
-
-// The app.get functions below are being processed in Node.js running on the server.
-// Implement a custom About page.
-app.get('/about', (request, response) => {
-	console.log('Calling "/about" on the Node.js server.')
-	response.type('text/plain')
-	response.send('About Node.js on Azure Template.')
-})
-
-app.get('/version', (request, response) => {
-	console.log('Calling "/version" on the Node.js server.')
-	response.type('text/plain')
-	response.send('Version: '+majorVersion+'.'+minorVersion)
-})
-
-app.get('/api/ping', (request, response) => {
-	console.log('Calling "/api/ping"')
-	response.type('text/plain')
-	response.send('ping response')
-})
-
-// Return the value of 2 plus 2.
-app.get('/2plus2', (request, response) => {
-	console.log('Calling "/2plus2" on the Node.js server.')
-	response.type('text/plain')
-	response.send('4')
-})
-
-// Add x and y which are both passed in on the URL. 
-app.get('/add-two-integers', (request, response) => {
-	console.log('Calling "/add-two-integers" on the Node.js server.')
-	var inputs = url.parse(request.url, true).query
-	let x = parseInt(inputs.x)
-	let y = parseInt(inputs.y)
-	let sum = x + y
-	response.type('text/plain')
-	response.send(sum.toString())
-})
-
-// Template for calculating BMI using height in feet/inches and weight in pounds.
-app.get('/calculate-bmi', (request, response) => {
-	console.log('Calling "/calculate-bmi" on the Node.js server.')
-	var inputs = url.parse(request.url, true).query
-	const heightFeet = parseInt(inputs.feet)
-	const heightInches = parseInt(inputs.inches)
-	const weight = parseInt(inputs.lbs)
-
-	console.log('Height:' + heightFeet + '\'' + heightInches + '\"')
-	console.log('Weight:' + weight + ' lbs.')
-
-	// Todo: Implement unit conversions and BMI calculations.
-	// Todo: Return BMI instead of Todo message.
-
-	response.type('text/plain')
-	response.send('Todo: Implement "/calculate-bmi"')
-})
-
-// Test a variety of functions.
-app.get('/test', (request, response) => {
-    // Write the request to the log. 
-    console.log(request);
-
-    // Return HTML.
-    response.writeHead(200, {'Content-Type': 'text/html'});
-    response.write('<h3>Testing Function</h3>')
-
-    // Access function from a separate JavaScript module.
-    response.write("The date and time are currently: " + dt.myDateTime() + "<br><br>");
-
-    // Show the full url from the request. 
-    response.write("req.url="+request.url+"<br><br>");
-
-    // Suggest adding something tl the url so that we can parse it. 
-    response.write("Consider adding '/test?year=2017&month=July' to the URL.<br><br>");
+// Age risk calculation
+app.get('/age-risk', (req, res) => {
+    const ageOption = req.query.ageOption; // Extract the age option chosen from the passed in parameter
+    var ageRisk = 0; // Initialize ageRisk to 0
     
-	// Parse the query string for values that are being passed on the URL.
-	var q = url.parse(request.url, true).query;
-    var txt = q.year + " " + q.month;
-    response.write("txt="+txt);
+    // Assign the risk point values for each age threshold
+    if (ageOption === '1') {
+        ageRisk = 0;
+    } else if (ageOption === '2') {
+        ageRisk = 10;
+    } else if (ageOption === '3') {
+        ageRisk = 20;
+    } else {
+        ageRisk = 30;
+    }
 
-    // Close the response
-    response.end('<h3>The End.</h3>');
-})
-
-// Return Batman as JSON.
-const batMan = {
-	"firstName":"Bruce",
-	"lastName":"Wayne",
-	"preferredName":"Batman",
-	"email":"darkknight@lewisu.edu",
-	"phoneNumber":"800-bat-mann",
-	"city":"Gotham",
-	"state":"NJ",
-	"zip":"07101",
-	"lat":"40.73",
-	"lng":"-74.17",
-	"favoriteHobby":"Flying",
-	"class":"cpsc-24700-001",
-	"room":"AS-104-A",
-	"startTime":"2 PM CT",
-	"seatNumber":"",
-	"inPerson":[
-		"Monday",
-		"Wednesday"
-	],
-	"virtual":[
-		"Friday"
-	]
-}
-
-app.get('/batman', (request, response) => {
-	console.log('Calling "/batman" on the Node.js server.')
-	response.type('application/json')
-	response.send(JSON.stringify(batMan))
-})
-
-// Load your JSON data
-const favoritePlaces = require('./FavoritePlaces.json');
-
-// Create a route that serves the JSON data
-app.get('/api/favorite-places', (req, res) => {
-  res.json(favoritePlaces);
+    // Send JSON response with age risk result
+    res.json({
+        ageRisk: ageRisk
+    });
 });
 
+// BMI risk
+app.get('/bmi-risk', (req, res) => {
+    const heightFeet = req.query.heightFeet; // Extract heightFeet value from passed in paramter
+    const heightInches = req.query.heightInches; // Extract heightInches value from passed in paramter
+    const weightPounds = req.query.weight; // Extract weight value from passed in paramter
+	var bmiRisk = 0; // Initialize bmiRisk to 0
 
+    // Calculate BMI
+    const heightImperial = parseInt(heightFeet * 12) + parseInt(heightInches); // Converts total height to inches (Imperial)
+    const heightMetric = (heightImperial * 0.0254) * (heightImperial * 0.0254); // Converts inches into meters squared (Metric)
+	let weightMetric = weightPounds * 0.453592; //Converts weight (pounds) to kilos
+    const bmi = Math.round((weightMetric / heightMetric) * 10) / 10; // Calculates BMI and rounds to one decimal place
 
-// Custom 404 page.
-app.use((request, response) => {
-  response.type('text/plain')
-  response.status(404)
-  response.send('404 - Not Found')
+    // Determine risk score for BMI based on categories
+    if (bmi >= 18.5 && bmi <= 24.9) { // Normal weight
+        bmiRisk = 0;
+    } else if (bmi >= 25.0 && bmi <= 29.9) { // Overweight
+        bmiRisk = 30;
+    } else { // Obese
+        bmiRisk = 75;
+    }
+
+    // Send JSON response with bmiRisk
+    res.json({
+        bmiRisk: bmiRisk
+    });
+});
+
+// Pressure risk
+app.get('/pressure-risk', (req, res) => {
+    const pressureOption = req.query.pressureOption; // Extract the pressure option chosen from the passed in parameter
+    var pressureRisk = 0; // Initialize pressureRisk to 0
+    
+    // Assign the risk point values for each pressure option threshold
+    if (pressureOption === '0') {
+        pressureRisk = 0;
+    } else if (pressureOption === '1') {
+        pressureRisk = 15;
+    } else if (pressureOption === '2') {
+        pressureRisk = 30;
+	} else if (pressureOption === '3') {
+        pressureRisk = 75;
+    } else {
+        pressureRisk = 100;
+    }
+
+    // Send JSON response with age risk result
+    res.json({
+        pressureRisk: pressureRisk
+    });
+});
+
+// Family history risk
+app.get('/history-risk', (req, res) => {
+    const diabetesChecked = req.query.diabetesChecked; // Value that says if diabetes is checked
+    const cancerChecked = req.query.cancerChecked; // Value that says if cancer is checked
+    const alzheimersChecked = req.query.alzheimersChecked; // Value that says if Alzheimer's is checked
+    var historyRisk = 0; // Initialize historyRisk to 0
+
+	// Calculate the points based on the checked checkboxes
+	if (diabetesChecked === 'true') {
+		historyRisk += 10; // Add 10 points for diabetes
+	}
+	if (cancerChecked === 'true') {
+		historyRisk += 10; // Add 10 points for cancer
+	}
+	if (alzheimersChecked === 'true') {
+		historyRisk += 10; // Add 10 points for Alzheimer's
+	}
+
+    // Send JSON response with history risk points
+    res.json({
+        historyRisk: historyRisk
+    });
+});
+
+// Custom 404 page
+app.use((req, res) => {
+    res.type('text/plain')
+    res.status(404)
+    res.send('404 - Not Found')
 })
 
-// Custom 500 page.
-app.use((err, request, response, next) => {
-  console.error(err.message)
-  response.type('text/plain')
-  response.status(500)
-  response.send('500 - Server Error')
+// Custom 500 page
+app.use((err, req, res, next) => {
+    console.error(err.message)
+    res.type('text/plain')
+    res.status(500)
+    res.send('500 - Server Error')
 })
 
-app.listen(port, () => console.log(
-  `Express started at \"http://localhost:${port}\"\n` +
-  `press Ctrl-C to terminate.`)
-)
+// Start the server
+app.listen(port, () => {
+    console.log(`Server started on port ${port}`);
+});
