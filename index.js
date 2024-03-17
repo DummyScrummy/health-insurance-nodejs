@@ -5,6 +5,7 @@ const path = require('path'); // Import file paths
 // Create an Express application
 const app = express();
 const port = process.env.PORT || 3000; // Set the port
+var totalRisk = 0;
 
 // Allow requests from all origins
 app.use(cors());
@@ -107,6 +108,34 @@ app.get('/history-risk', (req, res) => {
     // Send JSON response with history risk points
     res.json({
         historyRisk: historyRisk
+    });
+});
+
+// Total risk
+app.get('/calculate-risk', (req, res) => {
+    // Get each passed in risk total, as integers
+    const ageRiskResult = parseInt(req.query.ageRiskResult);
+    const bmiRiskResult = parseInt(req.query.bmiRiskResult);
+    const pressureRiskResult = parseInt(req.query.pressureRiskResult);
+    const historyRiskResult = parseInt(req.query.historyRiskResult);
+
+    // Total the results
+    totalRisk = ageRiskResult + bmiRiskResult + pressureRiskResult + historyRiskResult
+
+    if (totalRisk <= 20) {
+        remark = "Based on these scores, this patient is low risk."; 
+    } else if (totalRisk <= 50) {
+        remark = "Based on these scores, this patient is moderate risk."; 
+    } else if (totalRisk <= 75) {
+        remark = "Based on these scores, this patient is high risk."; 
+    } else {
+        remark = "Based on these scores, this patient is uninsurable.";
+    }    
+
+    // Send JSON response with total risk points
+    res.json({
+        totalRisk: totalRisk,
+        remark: remark
     });
 });
 
