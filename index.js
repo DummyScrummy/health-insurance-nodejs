@@ -13,6 +13,13 @@ app.use(cors());
 // Use static files from the static folder
 app.use(express.static(path.join(__dirname, 'static')));
 
+// Basic Ping Api Ping to wake the server up
+app.get('/api/ping', (request, response) => {
+    console.log('Calling "/api/ping"')
+    response.type('text/plain')
+    response.send('ping response')
+})
+
 // Age risk calculation
 app.get('/age-risk', (req, res) => {
     const ageOption = req.query.ageOption; // Extract the age option chosen from the passed in parameter
